@@ -1,9 +1,9 @@
-# gow-nvidia-vol — Build the Games on Whales NVIDIA driver volume as a Nix
-# store path. Replaces the runtime `podman build` of the GoW Dockerfile by
+# wolf-nvidia-vol — Build the Games on Whales NVIDIA driver volume as a Nix
+# store path. Replaces the runtime `podman build` of the Wolf Dockerfile by
 # running the NVIDIA .run installer inside a QEMU VM at build time.
 #
 # The output is a directory with the same /usr/nvidia layout that Wolf and
-# GoW child containers expect. Mount it as a bind mount instead of a named
+# Wolf child containers expect. Mount it as a bind mount instead of a named
 # Docker/Podman volume.
 #
 # Requires KVM on the builder (the VM runs the NVIDIA installer).
@@ -18,7 +18,7 @@
       lib = nixpkgs.lib;
     in
     {
-      lib.mkGowNvidiaVol =
+      lib.mkWolfNvidiaVol =
         {
           pkgs,
           # The NVIDIA driver package (e.g. config.hardware.nvidia.package).
@@ -30,19 +30,19 @@
           extraLibs ? [ ],
         }:
         assert lib.assertMsg (pkgs.stdenv.hostPlatform.isx86_64
-        ) "gow-nvidia-vol: only x86_64-linux is supported (NVIDIA desktop drivers are x86_64 only)";
+        ) "wolf-nvidia-vol: only x86_64-linux is supported (NVIDIA desktop drivers are x86_64 only)";
         assert lib.assertMsg (
           nvidiaPackage ? src
-        ) "gow-nvidia-vol: nvidiaPackage must have a .src attribute pointing to the NVIDIA .run installer";
+        ) "wolf-nvidia-vol: nvidiaPackage must have a .src attribute pointing to the NVIDIA .run installer";
         assert lib.assertMsg (
           nvidiaPackage ? version
-        ) "gow-nvidia-vol: nvidiaPackage must have a .version attribute";
+        ) "wolf-nvidia-vol: nvidiaPackage must have a .version attribute";
         let
           nvVersion = nvidiaPackage.version;
         in
         pkgs.vmTools.runInLinuxVM (
           pkgs.stdenv.mkDerivation {
-            name = "gow-nvidia-driver-vol-${nvVersion}";
+            name = "wolf-nvidia-driver-vol-${nvVersion}";
 
             nativeBuildInputs = with pkgs; [
               pkg-config
@@ -78,7 +78,7 @@
               ln -s ${pkgs.kmod}/bin/rmmod /sbin/rmmod
               ln -s ${pkgs.kmod}/bin/depmod /sbin/depmod
 
-              # Run the NVIDIA installer with the same flags as the GoW Dockerfile
+              # Run the NVIDIA installer with the same flags as the Wolf Dockerfile
               sh ${nvidiaPackage.src} --silent -z \
                 --skip-depmod --skip-module-unload \
                 --no-nvidia-modprobe --no-kernel-modules --no-kernel-module-source \
