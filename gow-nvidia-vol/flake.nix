@@ -14,17 +14,29 @@
 
   outputs =
     { nixpkgs, ... }:
+    let
+      lib = nixpkgs.lib;
+    in
     {
       lib.mkGowNvidiaVol =
         {
           pkgs,
-          # The NVIDIA driver package (e.g. config.hardware.nvidia.package)
+          # The NVIDIA driver package (e.g. config.hardware.nvidia.package).
+          # Must have .src (the .run file) and .version attributes.
           nvidiaPackage,
           # Optional: extra packages to copy into the volume's lib/ directory.
           # Useful for libraries not included in the .run installer, e.g.
           # pkgs.cudaPackages.cuda_nvrtc.lib for libnvrtc.
           extraLibs ? [ ],
         }:
+        assert lib.assertMsg (pkgs.stdenv.hostPlatform.isx86_64
+        ) "gow-nvidia-vol: only x86_64-linux is supported (NVIDIA desktop drivers are x86_64 only)";
+        assert lib.assertMsg (
+          nvidiaPackage ? src
+        ) "gow-nvidia-vol: nvidiaPackage must have a .src attribute pointing to the NVIDIA .run installer";
+        assert lib.assertMsg (
+          nvidiaPackage ? version
+        ) "gow-nvidia-vol: nvidiaPackage must have a .version attribute";
         let
           nvVersion = nvidiaPackage.version;
         in
@@ -81,9 +93,11 @@
               cp /etc/vulkan/icd.d/nvidia_icd.json $out/share/vulkan/icd.d/ 2>/dev/null || true
 
               # Copy extra libraries (e.g. libnvrtc from CUDA toolkit)
-              for lib in ${builtins.concatStringsSep " " (map (l: "${l}/lib/*") extraLibs)}; do
-                cp -d "$lib" $out/lib/ 2>/dev/null || true
-              done
+              ${lib.optionalString (extraLibs != [ ]) ''
+                for lib in ${builtins.concatStringsSep " " (map (l: "${l}/lib/*") extraLibs)}; do
+                  cp -d "$lib" $out/lib/ 2>/dev/null || true
+                done
+              ''}
 
               # Verify the build produced usable output
               if [ ! -f "$out/lib/libcuda.so" ]; then

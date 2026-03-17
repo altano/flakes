@@ -54,4 +54,5 @@ Runs the NVIDIA `.run` installer inside a QEMU VM at build time. The output is a
 
 ## Requirements
 
-Requires KVM on the builder (the VM runs the NVIDIA installer).
+- KVM on the builder (the VM runs the NVIDIA installer)
+- x86_64-linux (NVIDIA desktop drivers are x86_64 only)
