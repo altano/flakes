@@ -48,6 +48,41 @@ in
 }
 ```
 
+## Overriding the NVIDIA driver version
+
+The `nvidiaPackage` parameter has no default — you must pass it explicitly. If your nixpkgs doesn't have the driver version you need, use `mkDriver` to pin a specific version.
+
+You can extract the hashes from a nixpkgs that has the version you want (e.g., nixos-unstable):
+
+```bash
+nix eval --impure --expr '
+  let pkgs = import (fetchTarball
+    "https://github.com/NixOS/nixpkgs/archive/nixos-unstable.tar.gz"
+  ) { system = "x86_64-linux"; config.allowUnfree = true; };
+  drv = pkgs.linuxPackages.nvidiaPackages.production;
+  in { inherit (drv) version; sha256 = drv.src.outputHash;
+       open = drv.open.src.outputHash;
+       settings = drv.settings.src.outputHash;
+       persistenced = drv.persistenced.src.outputHash; }
+' --json
+```
+
+Then pass them to `mkDriver` (see the [NixOS wiki](https://nixos.wiki/wiki/Nvidia#Running_Specific_NVIDIA_Driver_Versions) for more details):
+
+```nix
+{
+  hardware.nvidia.package = config.boot.kernelPackages.nvidiaPackages.mkDriver {
+    version = "580.142";
+    sha256_64bit = "sha256-IJFfzz/+icNVDPk7YKBKKFRTFQ2S4kaOGRGkNiBEdWM=";
+    openSha256 = "sha256-v968LbRqy8jB9+yHy9ceP2TDdgyqfDQ6P41NsCoM2AY=";
+    settingsSha256 = "sha256-BnrIlj5AvXTfqg/qcBt2OS9bTDDZd3uhf5jqOtTMTQM=";
+    persistencedSha256 = "sha256-il403KPFAnDbB+dITnBGljhpsUPjZwmLjGt8iPKuBqw=";
+  };
+}
+```
+
+This builds the driver against your system's kernel, avoiding version mismatches. The `wolfNvidiaVol` derivation picks up the override since it references `config.hardware.nvidia.package`.
+
 ## How it works
 
 Runs the NVIDIA `.run` installer inside a QEMU VM at build time. The output is a directory with the same `/usr/nvidia` layout that Wolf child containers expect. Mount it as a bind mount instead of a named Docker/Podman volume.
