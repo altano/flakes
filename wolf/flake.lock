@@ -1,0 +1,50 @@
+{
+  "nodes": {
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1780243769,
+        "narHash": "sha256-x5UQuRsH3MqI0U9afaXSNqzTPSeZlRLvFAav2Ux1pNw=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "331800de5053fcebacf6813adb5db9c9dca22a0c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "nixpkgs": "nixpkgs",
+        "wolf-nvidia-vol": "wolf-nvidia-vol"
+      }
+    },
+    "wolf-nvidia-vol": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "dir": "wolf-nvidia-vol",
+        "lastModified": 1774317538,
+        "narHash": "sha256-gQPI2GE9CtXpRv6YMW9u4QUOZGobv647js+IPfFuR28=",
+        "owner": "altano",
+        "repo": "flakes",
+        "rev": "1574ba0885f6e2af25df63d9140dc10384b40d2d",
+        "type": "github"
+      },
+      "original": {
+        "dir": "wolf-nvidia-vol",
+        "owner": "altano",
+        "repo": "flakes",
+        "type": "github"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}

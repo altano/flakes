@@ -1,0 +1,48 @@
+# Nightly refresh of wolf/containers.json digest pins.
+# Commits any digest change directly to main.
+name: wolf · update container pins
+
+on:
+  schedule:
+    - cron: "0 7 * * *" # nightly, 07:00 UTC
+  workflow_dispatch: {}
+
+# Allow the job to push the regenerated containers.json back to main.
+permissions:
+  contents: write
+
+concurrency:
+  group: wolf-update-containers
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: wolf
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
+      - uses: DeterminateSystems/magic-nix-cache-action@908b263ff629f4cc17666315b7fd3ec127c6244d # v14
+
+      - name: Refresh digests
+        run: |
+          cp generated/containers.json /tmp/old.json
+          nix run .#update-containers
+
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- generated/containers.json; then
+            echo "No digest changes."
+            exit 0
+          fi
+          nix develop -c ./ci-message.sh /tmp/old.json generated/containers.json > /tmp/msg.txt
+          echo "----- commit message -----"
+          cat /tmp/msg.txt
+          echo "--------------------------"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add generated/containers.json
+          git commit -F /tmp/msg.txt
+          git push

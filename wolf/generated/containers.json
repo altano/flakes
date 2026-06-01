@@ -1,0 +1,103 @@
+{
+  "es-de": {
+    "edge": {
+      "digest": "sha256:4750c423b8b5c3b24babca2e63d093d420da6abc18b09108ee5450aca5f24c35",
+      "image": "ghcr.io/games-on-whales/es-de",
+      "tag": "edge"
+    }
+  },
+  "firefox": {
+    "edge": {
+      "digest": "sha256:ee72d57722207068c6894fbcd22fc82ecbd2400898b2f7d566b678af13d8a338",
+      "image": "ghcr.io/games-on-whales/firefox",
+      "tag": "edge"
+    }
+  },
+  "kodi": {
+    "edge": {
+      "digest": "sha256:75ab0bac4d77c9a2c84e0e6820ad00de21f0fff44295d7cf3e27a4d0e5cbce3b",
+      "image": "ghcr.io/games-on-whales/kodi",
+      "tag": "edge"
+    }
+  },
+  "lutris": {
+    "edge": {
+      "digest": "sha256:cb06a9178f4fd8d40faf36d460362126465c37e283eec5fe3585be23d5b3700d",
+      "image": "ghcr.io/games-on-whales/lutris",
+      "tag": "edge"
+    }
+  },
+  "pegasus": {
+    "edge": {
+      "digest": "sha256:c43452664c96408cfcbcaa6afca4207fd72d905c461434718a984404346e1b39",
+      "image": "ghcr.io/games-on-whales/pegasus",
+      "tag": "edge"
+    }
+  },
+  "prismlauncher": {
+    "edge": {
+      "digest": "sha256:064d63a911f440814c12eec1abf00b3876ef6a3c6805296eb2694d10b12dbc64",
+      "image": "ghcr.io/games-on-whales/prismlauncher",
+      "tag": "edge"
+    }
+  },
+  "pulseaudio": {
+    "master": {
+      "digest": "sha256:bc7ef9c892b4b810cb083151c2eb9a101368231b434bf40a00c0ef3432c8b99a",
+      "image": "ghcr.io/games-on-whales/pulseaudio",
+      "tag": "master"
+    }
+  },
+  "retroarch": {
+    "edge": {
+      "digest": "sha256:701774b19b5d7af5eb21f95a221924defe6dde40f47b875ac04b71d6cc2a5bd5",
+      "image": "ghcr.io/games-on-whales/retroarch",
+      "tag": "edge"
+    }
+  },
+  "steam": {
+    "edge": {
+      "digest": "sha256:d7bbf57c32bafb461722f50482b6244631e0b51478593be39003b66f96eb19d3",
+      "image": "ghcr.io/games-on-whales/steam",
+      "tag": "edge"
+    }
+  },
+  "wolf": {
+    "alpha": {
+      "digest": "sha256:8b0d3a744237f009e9ff5195672df82712f095475f7cc9e92dc8bcd8ac3a31dc",
+      "image": "ghcr.io/games-on-whales/wolf",
+      "tag": "alpha"
+    },
+    "buildcache": {
+      "digest": "sha256:7a944921ba2c7ef3705ee8194e79a9f6ad1efa55a21104740b93d24ca2e5a0a9",
+      "image": "ghcr.io/games-on-whales/wolf",
+      "tag": "buildcache"
+    },
+    "stable": {
+      "digest": "sha256:082d04017ae75f5d3b7006bfec7c50aa627269561e87a9358eb61cc7c9f0a1b2",
+      "image": "ghcr.io/games-on-whales/wolf",
+      "tag": "stable"
+    }
+  },
+  "wolf-den": {
+    "stable": {
+      "digest": "sha256:643d513221080b49101b9c83ed4b7c6800caa325f0ec0280d6cf2f380971d8a1",
+      "image": "ghcr.io/games-on-whales/wolf-den",
+      "tag": "stable"
+    }
+  },
+  "wolf-ui": {
+    "main": {
+      "digest": "sha256:2bb659ba5b49c1733643796b27f9e46df048ae586e5a220fd42814dd4bef734f",
+      "image": "ghcr.io/games-on-whales/wolf-ui",
+      "tag": "main"
+    }
+  },
+  "xfce": {
+    "edge": {
+      "digest": "sha256:ddac0a8950a2465ed79a17a24af5ec612749cfefae3b1303811903d66ccfebb9",
+      "image": "ghcr.io/games-on-whales/xfce",
+      "tag": "edge"
+    }
+  }
+}
