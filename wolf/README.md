@@ -1,11 +1,11 @@
 # wolf
 
-A NixOS module for [Wolf](https://games-on-whales.github.io/wolf/) (Games on
-Whales) — multi-user cloud gaming over Moonlight.
+A NixOS module for [Wolf](https://games-on-whales.github.io/wolf/), a part of
+Games on Whales (a platform for multi-user, cloud gaming over Moonlight).
 
 ## Features
 
-- Fully configurable via this nix module. Writes Wolf's toml config.
+- Fully configurable via this nix module. Manages Wolf's toml config.
 - Specify apps (stock apps like Steam, or custom apps).
 - Define profiles w/ icon, apps, PIN code, etc.
 - Can configure NVIDIA GPU drivers (AMD/Intel not yet supported).
@@ -32,14 +32,11 @@ Import the module and configure the service (NVIDIA + podman example):
 
   services.wolf = {
     enable = true;
-    uuid = "c0c283f1-5f7b-4467-a21d-472283c249b7"; # stable; changing it re-pairs all clients
-    internalIP = "10.10.40.40";
+    # Stable host ID Moonlight uses to recognize this paired host (any UUID).
+    # Generate one with `uuidgen`. Changing it forces all clients to re-pair.
+    uuid = "00000000-0000-0000-0000-000000000000";
     openFirewall = true;
-    backend = "podman";
-    gpu = {
-      vendor = "nvidia";
-      nvidiaPackage = config.hardware.nvidia.package;
-    };
+    gpu.vendor = "nvidia";
 
     profiles = [
       {
@@ -62,9 +59,8 @@ Import the module and configure the service (NVIDIA + podman example):
 
 ### Basic, no GPU, one profile
 
-The minimum to get a working host: identity (`uuid`), the IP Moonlight connects
-to, and a socket for the launcher. `gpu.vendor` defaults to `none`, so no
-GPU-specific config is added.
+The bare minimum: a `uuid` and a profile. `gpu.vendor` defaults to `none`, so no
+GPU config is added, and `internalIP`/`socketPath` are auto-detected/defaulted.
 
 ```nix
 {
@@ -72,10 +68,10 @@ GPU-specific config is added.
 
   services.wolf = {
     enable = true;
-    uuid = "c0c283f1-5f7b-4467-a21d-472283c249b7"; # stable; changing it re-pairs all clients
-    internalIP = "192.168.1.50";
+    # Stable host ID Moonlight uses to recognize this paired host (any UUID).
+    # Generate one with `uuidgen`. Changing it forces all clients to re-pair.
+    uuid = "00000000-0000-0000-0000-000000000000";
     openFirewall = true;
-    socketPath = "/var/run/wolf/wolf.sock"; # required by the wolf-ui launcher
 
     profiles = [
       {
@@ -93,7 +89,50 @@ GPU-specific config is added.
 Moonlight shows one host; opening it lands on the **Launcher** (Wolf UI), where
 the `me` profile offers Firefox and an XFCE desktop.
 
-### NVIDIA GPU, multiple profiles
+### NVIDIA GPU, basic config/profile
+
+The basic config plus NVIDIA passthrough. You set up the host driver; the module
+builds the driver volume (via `wolf-nvidia-vol`) and wires up CDI from one `gpu`
+block.
+
+```nix
+{ config, ... }:
+{
+  imports = [ inputs.wolf.nixosModules.default ];
+
+  # Host NVIDIA driver (the module auto-enables the CDI container toolkit).
+  hardware = {
+    graphics.enable = true;
+    nvidia = {
+      open = true; # Ada/Ampere and newer; false for older GPUs
+      modesetting.enable = true;
+      package = config.boot.kernelPackages.nvidiaPackages.production;
+    };
+  };
+
+  services.wolf = {
+    enable = true;
+    # Stable host ID Moonlight uses to recognize this paired host (any UUID).
+    # Generate one with `uuidgen`. Changing it forces all clients to re-pair.
+    uuid = "00000000-0000-0000-0000-000000000000";
+    openFirewall = true;
+    gpu.vendor = "nvidia";
+
+    profiles = [
+      {
+        name = "me";
+        apps = [
+          { name = "steam"; }
+          { name = "firefox"; }
+          { name = "desktop"; }
+        ];
+      }
+    ];
+  };
+}
+```
+
+### NVIDIA GPU, advanced config, multiple profiles
 
 A fuller setup: NVIDIA passthrough, persistent TLS cert/key (so pairings
 survive rebuilds — here via [agenix](https://github.com/ryantm/agenix), any
@@ -106,32 +145,35 @@ per-app tuning.
   imports = [ inputs.wolf.nixosModules.default ];
 
   # Host NVIDIA driver (the module auto-enables the CDI container toolkit).
-  hardware.nvidia = {
-    open = true; # Ada/Ampere and newer; false for older GPUs
-    modesetting.enable = true;
-    package = config.boot.kernelPackages.nvidiaPackages.production;
+  hardware = {
+    graphics.enable = true;
+    nvidia = {
+      open = true; # Ada/Ampere and newer; false for older GPUs
+      modesetting.enable = true;
+      package = config.boot.kernelPackages.nvidiaPackages.production;
+    };
   };
-  hardware.graphics.enable = true;
 
   services.wolf = {
     enable = true;
-    uuid = "c0c283f1-5f7b-4467-a21d-472283c249b7";
-    internalIP = "10.10.40.40";
+    # Stable host ID Moonlight uses to recognize this paired host (any UUID).
+    # Generate one with `uuidgen`. Changing it forces all clients to re-pair.
+    uuid = "00000000-0000-0000-0000-000000000000";
     openFirewall = true;
-    socketPath = "/var/run/wolf/wolf.sock";
+    gpu.vendor = "nvidia";
 
-    # Persist the pairing identity across rebuilds.
+    # OPTIONAL: Persist the pairing identity across rebuilds.
     privateCertPath = config.age.secrets."wolf-cert".path;
     privateKeyPath = config.age.secrets."wolf-key".path;
 
-    gpu = {
-      vendor = "nvidia";
-      nvidiaPackage = config.hardware.nvidia.package;
-    };
-
-    # OPTIONAL: Append low-latency DXVK tuning to the stock Steam app (not restated).
+    # OPTIONAL: append low-latency DXVK tuning to Steam
     appExtraEnv.steam = [
-      "DXVK_CONFIG=dxgi.syncInterval = 0; dxgi.maxFrameLatency = 1; dxgi.maxFrameRate = 120"
+      (
+        "DXVK_CONFIG="
+        + "dxgi.syncInterval = 0;"
+        + "dxgi.maxFrameLatency = 1;"
+        + "dxgi.maxFrameRate = 120"
+      )
     ];
 
     profiles = [
@@ -200,7 +242,7 @@ environment variables (e.g. per-host tuning). Keys must name a built-in app:
 ```nix
 {
   services.wolf.appExtraEnv.steam = [
-    "DXVK_CONFIG=dxgi.syncInterval = 0; dxgi.maxFrameRate = 120"
+    "DXVK_CONFIG=dxgi.maxFrameRate = 120"
   ];
 }
 ```
@@ -228,55 +270,117 @@ your own app (reusing the name overrides the built-in) and reference that:
 }
 ```
 
-## Key options
+## Configuration
 
-| Option                | Default       | Description                                                                                                                  |
-| --------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `backend`             | `podman`      | OCI backend (`podman`/`docker`).                                                                                             |
-| `wolfTag`             | `stable`      | Which pinned Wolf tag to run (`stable`/`alpha`).                                                                             |
-| `gpu.vendor`          | `none`        | `none` (no GPU config) or `nvidia` (driver volume via `wolf-nvidia-vol` + CDI). `intel`/`amd` reserved, not yet implemented. |
-| `gpu.useCDI`          | `true`        | NVIDIA via `--device=nvidia.com/gpu=all` vs enumerating `/dev/nvidia*`.                                                      |
-| `pulseImage`          | pinned        | PulseAudio sidecar image (`WOLF_PULSE_IMAGE`).                                                                               |
-| `ports.*`             | Wolf defaults | Firewall ports opened when `openFirewall`.                                                                                   |
-| `supportHevc`         | `null`        | config.toml `support_hevc` (null = leave to Wolf / preserved).                                                               |
-| `defaultRun{Uid,Gid}` | `null`        | `WOLF_DEFAULT_RUN_{UID,GID}` for newly paired clients (null = Wolf default 1000).                                            |
-| `extraApps`           | `{}`          | Consumer-supplied catalog entries (override a built-in by reusing its name).                                                 |
-| `appExtraEnv`         | `{}`          | Append env to a built-in app, keyed by app name.                                                                             |
-| `extraEnvironment`    | `{}`          | Escape hatch for any other Wolf-server env var (`RUST_BACKTRACE`, `GST_DEBUG`, …).                                           |
-| `extraConfig`         | `{}`          | Escape hatch for any other top-level `config.toml` field (overrides the preserved live value).                               |
+### Required Options
 
-### config.toml / env coverage
+| Option   | Type | Default      | Description                                                                                                                          |
+| -------- | ---- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `enable` | bool | `false`      | Enable the Wolf service (set to `true`).                                                                                             |
+| `uuid`   | str  | _(required)_ | Stable host ID Moonlight uses to recognize this paired host. Changing it forces all clients to re-pair. Generate one with `uuidgen`. |
 
-Every documented [Wolf config option](https://games-on-whales.github.io/wolf/stable/user/configuration.html)
-is reachable:
+### Key Options
 
-- **Wolf-server env** — modelled options above (`logLevel`, `pulseImage`,
-  `stopContainerOnExit`, `gpu.renderNode`, `private{Cert,Key}Path`,
-  `defaultRun{Uid,Gid}`, …). The container-internal path vars (`WOLF_CFG_FILE`,
-  `HOST_APPS_STATE_FOLDER`, `WOLF_DOCKER_SOCKET`, `XDG_RUNTIME_DIR`) are fixed and
-  driven by the host-side mounts — set `configDir`/`dataDir`/`backend` instead.
-  Anything else: `extraEnvironment`.
-- **App-container env** (`RUN_SWAY`, `XKB_DEFAULT_*`, `PROTON_LOG`, …) — set
-  per app in the catalog / `extraApps` / `appExtraEnv`.
-- **config.toml** — `uuid`, `hostname`, `profiles` (and their nested
-  `apps`/`runner`/`video`/`audio`) are generated; `support_hevc` via
-  `supportHevc`; anything else via `extraConfig`.
+| Option                               | Type               | Default               | Description                                                                                                       |
+| ------------------------------------ | ------------------ | --------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `appExtraEnv`                        | attrs of list      | `{}`                  | Append env to a built-in app, keyed by app name.                                                                  |
+| `backend`                            | `podman`\|`docker` | `podman`              | OCI container backend.                                                                                            |
+| `extraApps`                          | attrs              | `{}`                  | Consumer catalog entries (override a built-in by reusing its name).                                               |
+| `gpu.nvidiaPackage`                  | null\|pkg          | host driver           | NVIDIA driver package; defaults to `config.hardware.nvidia.package` when `gpu.vendor = "nvidia"`, else null.      |
+| `gpu.vendor`                         | enum               | `none`                | `none` or `nvidia` (`intel`/`amd` reserved, not implemented).                                                     |
+| `internalIP`                         | null\|str          | `null`                | Override the IP advertised to Moonlight (`WOLF_INTERNAL_IP`); null = auto-detect (set for NAT/overlay/multi-NIC). |
+| `openFirewall`                       | bool               | `false`               | Open the Wolf ports in the firewall.                                                                              |
+| `privateCertPath` / `privateKeyPath` | null\|str          | `null`                | TLS cert/key paths (set both or neither).                                                                         |
+| `profiles`                           | list               | `[]`                  | Wolf UI profiles (`name`, `apps`, `icon`, `pin`).                                                                 |
+| `socketPath`                         | null\|str          | `/run/wolf/wolf.sock` | Host path for the Wolf control socket (used by `wolf-ui`; null to disable).                                       |
 
-NOTE: config.toml contains runtime-managed, mutable state (`paired_clients`, `gstreamer`, `config_version`) which is
-**preserved** across deploys by the merge step (see `preserveKeys` option); set
-`supportHevc`/`extraConfig` to override a preserved key declaratively.
+### Misc Options
+
+| Option                            | Type              | Default                                                    | Description                                                     |
+| --------------------------------- | ----------------- | ---------------------------------------------------------- | --------------------------------------------------------------- |
+| `configDir`                       | str               | `/var/lib/wolf/config`                                     | Host dir for config.toml, TLS, paired clients.                  |
+| `dataDir`                         | str               | `/var/lib/wolf/data`                                       | Host dir for app state.                                         |
+| `defaultRunUid` / `defaultRunGid` | null\|int         | `null`                                                     | UID/GID apps run as (`WOLF_DEFAULT_RUN_*`; null = Wolf's 1000). |
+| `extraConfig`                     | attrs             | `{}`                                                       | Extra top-level `config.toml` fields.                           |
+| `extraEnvironment`                | attrs of str      | `{}`                                                       | Extra Wolf-server environment variables.                        |
+| `extraOptions`                    | list of str       | `[]`                                                       | Extra backend (podman/docker) flags.                            |
+| `extraVolumes`                    | list of str       | `[]`                                                       | Extra Wolf container volume mounts.                             |
+| `gpu.extraLibs`                   | list of pkg       | `[]`                                                       | Extra driver-volume libs (`cuda_nvrtc` is always included).     |
+| `gpu.renderNode`                  | str               | `/dev/dri/renderD128`                                      | `WOLF_RENDER_NODE`.                                             |
+| `gpu.useCDI`                      | bool              | `true`                                                     | NVIDIA via CDI vs enumerating `/dev/nvidia*`.                   |
+| `hostname`                        | str               | host name                                                  | Display name in Moonlight's host list.                          |
+| `logLevel`                        | enum              | `INFO`                                                     | `WOLF_LOG_LEVEL` (`ERROR`…`TRACE`).                             |
+| `moonlightApps`                   | list              | `[ wolf-ui ]`                                              | Apps shown on the Moonlight entry screen.                       |
+| `ports.audioUDP`                  | port              | `48200`                                                    | Audio RTP port, opened when `openFirewall`.                     |
+| `ports.controlUDP`                | port              | `47999`                                                    | Control (input/stream) port, opened when `openFirewall`.        |
+| `ports.httpsTCP`                  | port              | `47984`                                                    | HTTPS control port (Moonlight), opened when `openFirewall`.     |
+| `ports.httpTCP`                   | port              | `47989`                                                    | HTTP pairing port, opened when `openFirewall`.                  |
+| `ports.rtspTCP`                   | port              | `48010`                                                    | RTSP stream-negotiation port, opened when `openFirewall`.       |
+| `ports.videoUDP`                  | port              | `48100`                                                    | Video RTP port, opened when `openFirewall`.                     |
+| `preserveKeys`                    | list of str       | `[ paired_clients config_version support_hevc gstreamer ]` | config.toml keys preserved across deploys (see below).          |
+| `pulseImage`                      | str               | pinned                                                     | PulseAudio sidecar image (`WOLF_PULSE_IMAGE`).                  |
+| `storageDriver`                   | `overlay`\|`vfs`  | `overlay`                                                  | podman storage driver (use `vfs` on virtiofs/FUSE).             |
+| `stopContainerOnExit`             | bool              | `true`                                                     | Stop/remove app containers when a client disconnects.           |
+| `supportHevc`                     | null\|bool        | `null`                                                     | config.toml `support_hevc` (null = leave to Wolf).              |
+| `wolfTag`                         | `stable`\|`alpha` | `stable`                                                   | Which pinned Wolf image tag to run.                             |
+
+### config.toml Options
+
+The module generates Wolf's `config.toml` — `uuid`, `hostname`, and `profiles`
+(plus `support_hevc` when `supportHevc` is set). For any other top-level field
+in the
+[Wolf config reference](https://games-on-whales.github.io/wolf/stable/user/configuration.html),
+use `extraConfig`:
+
+```nix
+{
+  services.wolf.extraConfig = {
+    support_hevc = false; # or use the dedicated `supportHevc` option
+  };
+}
+```
+
+`config.toml` also holds **runtime-managed, mutable state** that Wolf rewrites
+itself: `paired_clients`, `gstreamer` (the auto-detected encoder pipeline), and
+`config_version`. These keys are listed in `preserveKeys` and are **preserved**
+from the live file on every deploy, so a redeploy never clobbers them — e.g.
+your paired Moonlight clients and hardware-detected encoders survive. Setting a
+preserved key via `extraConfig` (or `supportHevc`) drops it from the preserved
+set so your declarative value wins instead.
+
+### Environment Variables
+
+Common Wolf-server
+[environment variables](https://games-on-whales.github.io/wolf/stable/user/configuration.html)
+are first-class options (`logLevel` → `WOLF_LOG_LEVEL`, `pulseImage`,
+`stopContainerOnExit`, `gpu.renderNode`, `defaultRun{Uid,Gid}`, …). Set any
+other with `extraEnvironment`:
+
+```nix
+{
+  services.wolf.extraEnvironment = {
+    GST_DEBUG = "3";
+    RUST_BACKTRACE = "full";
+  };
+}
+```
+
+Per-app environment (`RUN_SWAY`, `PROTON_LOG`, `XKB_DEFAULT_LAYOUT`, …) is set on
+each app via the catalog / `extraApps` / `appExtraEnv`, not here.
 
 ## Updating pinned digests
 
 Wolf ships as a moving Docker tag (`ghcr.io/games-on-whales/wolf:stable`), and
 it launches a fleet of companion/app containers (pulseaudio, steam, firefox,
 …) that are likewise published as moving tags. This flake records the current
-digest of each in [`generated/containers.json`](./generated/containers.json) so deploys are reproducible, and a nightly CI job refreshes those digests.
+digest of each in
+[`generated/containers.json`](./generated/containers.json) so deploys are
+reproducible, and a nightly CI job refreshes those digests.
 
 `generated/containers.json` is regenerated from the live registry with
-[`update-containers.sh`](./update-containers.sh). The set of images/tags to pin is **derived from
-the catalog** (the `trackedImages` flake output = every `imageRef` in
-[`apps.nix`](./apps.nix) plus a small core list in
+[`update-containers.sh`](./update-containers.sh). The set of images/tags to pin
+is **derived from the catalog** (the `trackedImages` flake output = every
+`imageRef` in [`apps.nix`](./apps.nix) plus a small core list in
 [`flake.nix`](./flake.nix)), so adding an app needs no second list. The
 `update-containers` package embeds that list and passes it to the script, so:
 

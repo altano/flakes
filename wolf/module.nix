@@ -71,7 +71,10 @@ let
       wolf-nvidia-vol.lib.mkWolfNvidiaVol {
         inherit pkgs;
         nvidiaPackage = cfg.gpu.nvidiaPackage;
-        inherit (cfg.gpu) extraLibs;
+        # libnvrtc is mandatory for NVENC: GStreamer's cudaconvertscale needs it,
+        # and without it Wolf silently falls back to software x265 (CPU-pegging).
+        # It's not in the driver .run, so always inject it; gpu.extraLibs adds more.
+        extraLibs = [ pkgs.cudaPackages.cuda_nvrtc.lib ] ++ cfg.gpu.extraLibs;
       }
     else
       null;
@@ -161,8 +164,7 @@ let
   );
 
   backend = cfg.backend;
-  dockerSocketHost =
-    if backend == "podman" then "/run/podman/podman.sock" else "/var/run/docker.sock";
+  dockerSocketHost = if backend == "podman" then "/run/podman/podman.sock" else "/run/docker.sock";
 in
 {
   options.services.wolf = {
@@ -200,9 +202,10 @@ in
     };
 
     internalIP = lib.mkOption {
-      type = lib.types.str;
-      description = "Internal IP address advertised to Moonlight (WOLF_INTERNAL_IP).";
+      type = lib.types.nullOr lib.types.str;
+      default = null;
       example = "192.168.0.39";
+      description = "Override the IP Wolf advertises to Moonlight (WOLF_INTERNAL_IP): the serverinfo LocalIP, the RTSP stream URL, and the interface used for the MAC lookup. null lets Wolf auto-detect from the incoming connection; set it for NAT/overlay/multi-NIC hosts.";
     };
 
     openFirewall = lib.mkEnableOption "opening Wolf ports in the firewall";
@@ -289,9 +292,8 @@ in
 
     socketPath = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
-      default = null;
-      example = "/var/run/wolf/wolf.sock";
-      description = "Path to mount the Wolf unix socket on the host (WOLF_SOCKET_PATH).";
+      default = "/run/wolf/wolf.sock";
+      description = "Host path for the Wolf control socket (WOLF_SOCKET_PATH), used by the wolf-ui launcher. Set to null to not expose it (then don't use the wolf-ui app).";
     };
 
     ports = lib.mkOption {
@@ -354,14 +356,15 @@ in
           };
           nvidiaPackage = lib.mkOption {
             type = lib.types.nullOr lib.types.package;
-            default = null;
-            example = lib.literalExpression "config.hardware.nvidia.package";
-            description = "NVIDIA driver package (required when vendor = \"nvidia\"). Must expose .src (the .run installer) and .version.";
+            default =
+              if config.services.wolf.gpu.vendor == "nvidia" then config.hardware.nvidia.package else null;
+            defaultText = lib.literalExpression ''if gpu.vendor == "nvidia" then config.hardware.nvidia.package else null'';
+            description = "NVIDIA driver package. When gpu.vendor = \"nvidia\", defaults to the host's configured driver (config.hardware.nvidia.package); otherwise null. Must expose .src (the .run installer) and .version.";
           };
           extraLibs = lib.mkOption {
             type = lib.types.listOf lib.types.package;
             default = [ ];
-            description = "Extra libraries to copy into the NVIDIA driver volume, for libraries a GStreamer element needs that aren't in the driver .run installer. Rarely required.";
+            description = "Additional libraries to copy into the NVIDIA driver volume, on top of cuda_nvrtc (which is always included for NVENC). For GStreamer elements needing libraries not in the driver .run installer. Rarely required.";
           };
           renderNode = lib.mkOption {
             type = lib.types.str;
@@ -509,10 +512,6 @@ in
         message = "Wolf: services.wolf.gpu.vendor = \"${cfg.gpu.vendor}\" is not yet supported (use \"nvidia\" or \"none\").";
       }
       {
-        assertion = nvidia -> cfg.gpu.nvidiaPackage != null;
-        message = "Wolf: services.wolf.gpu.nvidiaPackage must be set when gpu.vendor = \"nvidia\" (e.g. config.hardware.nvidia.package).";
-      }
-      {
         assertion = (cfg.privateCertPath == null) == (cfg.privateKeyPath == null);
         message = "Wolf: set both services.wolf.privateCertPath and privateKeyPath, or neither.";
       }
@@ -634,6 +633,8 @@ in
         "--privileged"
         "--ipc=host"
         ''--device-cgroup-rule="c 13:* rmw"''
+        # Target stays /var/run/docker.sock — it's Wolf's WOLF_DOCKER_SOCKET
+        # default (the path it looks for inside the container).
         "--volume=${dockerSocketHost}:/var/run/docker.sock:ro"
         "--volume=/dev:/dev:rw"
         "--volume=/run/udev:/run/udev:rw"
@@ -663,13 +664,15 @@ in
       ++ lib.optional (profilesWithIcons != [ ]) "${profilePicsDir}:/etc/wolf/profile-pictures:ro"
       ++ cfg.extraVolumes;
       environment = {
-        WOLF_INTERNAL_IP = cfg.internalIP;
         WOLF_RENDER_NODE = cfg.gpu.renderNode;
         WOLF_LOG_LEVEL = cfg.logLevel;
         WOLF_STOP_CONTAINER_ON_EXIT = if cfg.stopContainerOnExit then "TRUE" else "FALSE";
         WOLF_PULSE_IMAGE = cfg.pulseImage;
         XDG_RUNTIME_DIR = "/tmp/sockets";
         HOST_APPS_STATE_FOLDER = "/etc/wolf";
+      }
+      // lib.optionalAttrs (cfg.internalIP != null) {
+        WOLF_INTERNAL_IP = cfg.internalIP;
       }
       // lib.optionalAttrs nvidia {
         # Wolf passes the driver volume to child containers via the Binds API —
