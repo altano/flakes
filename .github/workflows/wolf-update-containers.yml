@@ -29,6 +29,8 @@ jobs:
       - name: Refresh digests
         run: |
           cp generated/containers.json /tmp/old.json
+          # update-containers exits non-zero (failing the job, no commit) if ANY
+          # tracked image fails to resolve — it never writes a partial/empty file.
           nix run .#update-containers
 
       - name: Commit if changed
@@ -36,6 +38,13 @@ jobs:
           if git diff --quiet -- generated/containers.json; then
             echo "No digest changes."
             exit 0
+          fi
+          # Defense in depth: never commit an empty or shrunken pin file.
+          old=$(jq '[.. | objects | select(.digest)] | length' /tmp/old.json)
+          new=$(jq '[.. | objects | select(.digest)] | length' generated/containers.json)
+          if [ "$new" -eq 0 ] || [ "$new" -lt "$old" ]; then
+            echo "REFUSING to commit: pin count ${old} -> ${new} (empty or shrunk)."
+            exit 1
           fi
           nix develop -c ./ci-message.sh /tmp/old.json generated/containers.json > /tmp/msg.txt
           echo "----- commit message -----"
