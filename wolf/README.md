@@ -1,11 +1,11 @@
 # wolf
 
-A NixOS module for [Wolf](https://games-on-whales.github.io/wolf/), a part of
+A NixOS flake for [Wolf](https://games-on-whales.github.io/wolf/), a part of
 Games on Whales (a platform for multi-user, cloud gaming over Moonlight).
 
 ## Features
 
-- Fully configurable via this nix module. Manages Wolf's toml config.
+- Manage Wolf's config.toml declaratively, fully configurable via this nix module.
 - Specify apps (stock apps like Steam, or custom apps).
 - Define profiles w/ icon, apps, PIN code, etc.
 - Can configure NVIDIA GPU drivers (AMD/Intel not yet supported).
@@ -368,27 +368,24 @@ other with `extraEnvironment`:
 Per-app environment (`RUN_SWAY`, `PROTON_LOG`, `XKB_DEFAULT_LAYOUT`, …) is set on
 each app via the catalog / `extraApps` / `appExtraEnv`, not here.
 
-## Updating pinned digests
+## Implementation Details
 
-Wolf ships as a moving Docker tag (`ghcr.io/games-on-whales/wolf:stable`), and
-it launches a fleet of companion/app containers (pulseaudio, steam, firefox,
-…) that are likewise published as moving tags. This flake records the current
-digest of each in
-[`generated/containers.json`](./generated/containers.json) so deploys are
-reproducible, and a nightly CI job refreshes those digests.
+None of this is required to understand how to _use_ the module, but if you're
+curious these are implementation details:
 
-`generated/containers.json` is regenerated from the live registry with
+### Using pinned digests for container images
+
+Wolf ships as a tagged container image (`ghcr.io/games-on-whales/wolf:stable`),
+and launches a fleet of companion/app containers (pulseaudio, steam, firefox, …)
+that are also published as tagged images. It wouldn't be reproducible to use the
+tagged versions on every boot, so this flake records the current digest of each
+in [`generated/containers.json`](./generated/containers.json). The container
+hashes are used in the resulting Wolf config, so pinning this flake indirectly
+pins the precise hash of each docker image.
+
+A nightly GitHub Actions workflow updates `generated/containers.json` with the
+latest hash of each tag, regenerated from the live registry with
 [`update-containers.sh`](./update-containers.sh). The set of images/tags to pin
-is **derived from the catalog** (the `trackedImages` flake output = every
-`imageRef` in [`apps.nix`](./apps.nix) plus a small core list in
-[`flake.nix`](./flake.nix)), so adding an app needs no second list. The
-`update-containers` package embeds that list and passes it to the script, so:
-
-```bash
-nix run .#update-containers     # from this directory
-```
-
-A nightly GitHub Actions workflow runs this and commits any digest changes to
-`main`. The flake only consumes the `stable` Wolf tag; `buildcache`/`alpha` are
-tracked for reference (`buildcache` is a CI layer-cache manifest, not a runnable
-release).
+is derived from the catalog (the `trackedImages` flake output = every `imageRef`
+in [`apps.nix`](./apps.nix) plus a small core list in
+[`flake.nix`](./flake.nix)).
