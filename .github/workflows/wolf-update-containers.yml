@@ -25,6 +25,11 @@ jobs:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
       - uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
       - uses: DeterminateSystems/magic-nix-cache-action@908b263ff629f4cc17666315b7fd3ec127c6244d # v14
+        with:
+          # We're not registered on FlakeHub; opportunistic FlakeHub Cache just
+          # emits an "Unable to authenticate to FlakeHub" annotation. Stick to
+          # the GitHub Actions cache.
+          use-flakehub: false
 
       - name: Refresh digests
         run: |
