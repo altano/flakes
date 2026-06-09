@@ -54,19 +54,8 @@ jobs:
             echo "REFUSING to commit: pin count ${old} -> ${new} (empty or shrunk)."
             exit 1
           fi
-          # ci-message.sh's stdout is the commit message; its stderr (traces,
-          # skopeo errors) flows to the CI log. If it fails, surface whatever
-          # partial message it managed to emit instead of swallowing it.
-          if ! nix develop -c ./ci-message.sh /tmp/old.json generated/containers.json > /tmp/msg.txt; then
-            echo "::error::ci-message.sh failed; partial stdout (commit message) was:"
-            cat /tmp/msg.txt || true
-            exit 1
-          fi
-          echo "----- commit message -----"
-          cat /tmp/msg.txt
-          echo "--------------------------"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add generated/containers.json
-          git commit -F /tmp/msg.txt
+          git commit -m "wolf: update containers.json"
           git push
