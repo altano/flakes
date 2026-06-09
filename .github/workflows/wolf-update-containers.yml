@@ -40,6 +40,8 @@ jobs:
 
       - name: Commit if changed
         run: |
+          # Trace every command so a failing step is never a bare "exit code 1".
+          set -x
           if git diff --quiet -- generated/containers.json; then
             echo "No digest changes."
             exit 0
@@ -47,11 +49,19 @@ jobs:
           # Defense in depth: never commit an empty or shrunken pin file.
           old=$(jq '[.. | objects | select(.digest)] | length' /tmp/old.json)
           new=$(jq '[.. | objects | select(.digest)] | length' generated/containers.json)
+          echo "pin count ${old} -> ${new}"
           if [ "$new" -eq 0 ] || [ "$new" -lt "$old" ]; then
             echo "REFUSING to commit: pin count ${old} -> ${new} (empty or shrunk)."
             exit 1
           fi
-          nix develop -c ./ci-message.sh /tmp/old.json generated/containers.json > /tmp/msg.txt
+          # ci-message.sh's stdout is the commit message; its stderr (traces,
+          # skopeo errors) flows to the CI log. If it fails, surface whatever
+          # partial message it managed to emit instead of swallowing it.
+          if ! nix develop -c ./ci-message.sh /tmp/old.json generated/containers.json > /tmp/msg.txt; then
+            echo "::error::ci-message.sh failed; partial stdout (commit message) was:"
+            cat /tmp/msg.txt || true
+            exit 1
+          fi
           echo "----- commit message -----"
           cat /tmp/msg.txt
           echo "--------------------------"
