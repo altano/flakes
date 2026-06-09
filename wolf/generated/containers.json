@@ -64,17 +64,17 @@
   },
   "wolf": {
     "alpha": {
-      "digest": "sha256:18636b81444baa91079dc4baa029494a5ffb724b3e60b4c2b73c4439a1537e26",
+      "digest": "sha256:48280104725c26e895f1acd468df253d4637131ad4575395de43b67ef7b1d7bc",
       "image": "ghcr.io/games-on-whales/wolf",
       "tag": "alpha"
     },
     "buildcache": {
-      "digest": "sha256:2c84ac27db073a935554b879d4592dd80d915e27aebbed6c8a138946134f425f",
+      "digest": "sha256:04708b456d6bab48281c060d99421c91fa22e5b4cb44afdb77974c7b694e786e",
       "image": "ghcr.io/games-on-whales/wolf",
       "tag": "buildcache"
     },
     "stable": {
-      "digest": "sha256:082d04017ae75f5d3b7006bfec7c50aa627269561e87a9358eb61cc7c9f0a1b2",
+      "digest": "sha256:48280104725c26e895f1acd468df253d4637131ad4575395de43b67ef7b1d7bc",
       "image": "ghcr.io/games-on-whales/wolf",
       "tag": "stable"
     }
