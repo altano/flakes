@@ -13,6 +13,10 @@
 {
   # socketPath: where the Wolf control socket lives (services.wolf.socketPath).
   socketPath,
+  # steamEnableProtonLogging: set PROTON_LOG=1 on the Steam app
+  # (services.wolf.defaultCatalog.steam.enableProtonLogging). Mirrors upstream
+  # Wolf's default when true.
+  steamEnableProtonLogging ? true,
 }:
 {
   # Wolf UI — the main launcher that shows profile selection and app management
@@ -143,8 +147,11 @@
         tag = "edge";
       };
       mounts = [ ];
-      env = [
-        "PROTON_LOG=1"
+      # PROTON_LOG=1 is upstream Wolf's default, but Proton's default log
+      # channels (+seh,+unwind) make exception-heavy games (most Unity/Mono
+      # titles) write ~10k trace lines/sec to the Proton log from the render
+      # thread, collapsing busy screens to <1fps. Gated on the module option.
+      env = (if steamEnableProtonLogging then [ "PROTON_LOG=1" ] else [ ]) ++ [
         "RUN_SWAY=true"
         "GOW_REQUIRED_DEVICES=/dev/input/* /dev/dri/* /dev/nvidia*"
       ];

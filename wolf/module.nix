@@ -30,7 +30,10 @@ let
   # Built-in app catalog. apps.nix declares images as `imageRef = { name; tag; }`;
   # rewrite each to a digest-pinned `image` for config.toml.
   socketPath' = if cfg.socketPath == null then "/run/wolf/wolf.sock" else cfg.socketPath;
-  rawApps = import ./apps.nix { socketPath = socketPath'; };
+  rawApps = import ./apps.nix {
+    socketPath = socketPath';
+    steamEnableProtonLogging = cfg.defaultCatalog.steam.enableProtonLogging;
+  };
   builtinAppNames = lib.attrNames rawApps;
   resolveImage =
     app:
@@ -375,6 +378,38 @@ in
             type = lib.types.bool;
             default = true;
             description = "For nvidia: pass the GPU via CDI (--device=nvidia.com/gpu=all) instead of enumerating /dev/nvidia* devices.";
+          };
+        };
+      };
+    };
+
+    defaultCatalog = lib.mkOption {
+      description = ''
+        Per-app settings for the built-in app catalog (`services.wolf.apps`).
+        Typed knobs for tweaking individual stock apps without redefining them
+        via `extraApps`.
+      '';
+      default = { };
+      type = lib.types.submodule {
+        options.steam = lib.mkOption {
+          description = "Settings for the built-in Steam app.";
+          default = { };
+          type = lib.types.submodule {
+            options.enableProtonLogging = lib.mkOption {
+              type = lib.types.bool;
+              default = true;
+              description = ''
+                Whether the built-in Steam app sets `PROTON_LOG=1` (Proton debug
+                logging), matching upstream Wolf's default.
+
+                Proton's default log channels include `+seh,+unwind`, so
+                exception-heavy games (most Unity/Mono titles) write tens of
+                thousands of trace lines per second to the Proton log from the
+                render thread — collapsing UI/particle-heavy screens to under
+                one frame per second. Set to false to omit `PROTON_LOG=1` and
+                avoid that overhead.
+              '';
+            };
           };
         };
       };
