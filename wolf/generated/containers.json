@@ -64,12 +64,12 @@
   },
   "wolf": {
     "alpha": {
-      "digest": "sha256:ff82c125c9b79b2e9443de2b0eaec40c904edb03291680d408cccd57c1d59c76",
+      "digest": "sha256:f4a3615d59a82f4a06859a5d0327f37f04707d1cda7c38031ae9f2a65c695339",
       "image": "ghcr.io/games-on-whales/wolf",
       "tag": "alpha"
     },
     "buildcache": {
-      "digest": "sha256:d705eab3ce0b56133068e9cc47fee3063e089932c7275cb1a0834f29f05dcf66",
+      "digest": "sha256:80b012c31adcec8b54139b1a0e1439234e9469b6526f544edda13cb55af1fb84",
       "image": "ghcr.io/games-on-whales/wolf",
       "tag": "buildcache"
     },
