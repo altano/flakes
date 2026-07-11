@@ -81,7 +81,7 @@
   },
   "wolf-den": {
     "stable": {
-      "digest": "sha256:643d513221080b49101b9c83ed4b7c6800caa325f0ec0280d6cf2f380971d8a1",
+      "digest": "sha256:2e9467a36b240421592735ba85940e22388c2d6d4e217932309632b6b40f7363",
       "image": "ghcr.io/games-on-whales/wolf-den",
       "tag": "stable"
     }
