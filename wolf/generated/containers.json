@@ -64,7 +64,7 @@
   },
   "wolf": {
     "alpha": {
-      "digest": "sha256:49093208de649f6e21da7fdb1738286a5d5f36c50466866de5cbf4fc53dedd73",
+      "digest": "sha256:5d8a2dd1b827608746d4a5cdf493882ad7330e2d829f299518b8deffdef66321",
       "image": "ghcr.io/games-on-whales/wolf",
       "tag": "alpha"
     },
