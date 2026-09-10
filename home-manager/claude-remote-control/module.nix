@@ -51,7 +51,8 @@ let
       # default prefix is the hostname alone, which would give every instance
       # on this machine the same name in the app.
       project=$(basename "$dir")
-      export CLAUDE_REMOTE_CONTROL_SESSION_NAME_PREFIX="$(hostname)/$project"
+      prefix="$(hostname)/$project"
+      export CLAUDE_REMOTE_CONTROL_SESSION_NAME_PREFIX="$prefix"
       exec ${claudeBin} remote-control ${lib.escapeShellArgs cfg.extraArgs}
     '';
   };
