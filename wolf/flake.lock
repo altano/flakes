@@ -29,20 +29,14 @@
         ]
       },
       "locked": {
-        "dir": "wolf-nvidia-vol",
-        "lastModified": 1774317538,
-        "narHash": "sha256-gQPI2GE9CtXpRv6YMW9u4QUOZGobv647js+IPfFuR28=",
-        "owner": "altano",
-        "repo": "flakes",
-        "rev": "1574ba0885f6e2af25df63d9140dc10384b40d2d",
-        "type": "github"
+        "path": "../wolf-nvidia-vol",
+        "type": "path"
       },
       "original": {
-        "dir": "wolf-nvidia-vol",
-        "owner": "altano",
-        "repo": "flakes",
-        "type": "github"
-      }
+        "path": "../wolf-nvidia-vol",
+        "type": "path"
+      },
+      "parent": []
     }
   },
   "root": "root",

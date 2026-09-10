@@ -4,7 +4,7 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     wolf-nvidia-vol = {
-      url = "github:altano/flakes?dir=wolf-nvidia-vol";
+      url = "path:../wolf-nvidia-vol";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
