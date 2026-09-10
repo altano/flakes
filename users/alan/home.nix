@@ -79,6 +79,27 @@
     ];
   };
 
+  # Devices and folders are declared, not paired in the GUI: home-manager
+  # rewrites both on every activation, so anything added through the web UI is
+  # discarded. The host opens the sync ports and orders this after the home
+  # mount; see configuration/services/user-vm in the infrastructure repo.
+  # Secrets this flake decrypts itself. The identity is delivered by whatever
+  # host the config is activated on: on a user VM, papa writes it there from
+  # its own agenix store. Files here are encrypted to that identity's public
+  # half plus the people listed in secrets/secrets.nix.
+  age.identityPaths = [ "/run/agenix/owner-age-identity" ];
+  age.secrets."syncthing-key".file = ./secrets/syncthing-key.age;
+
+  services.syncthing = {
+    enable = true;
+    # A stable device ID. Without these syncthing mints a new identity
+    # whenever its config directory is recreated, and every peer has to
+    # re-accept this machine. The cert is the public half, so it is checked
+    # in; the key is decrypted by the identity papa delivers.
+    cert = builtins.toString ./secrets/syncthing-cert.pem;
+    key = config.age.secrets."syncthing-key".path;
+  };
+
   home.sessionVariables = {
     EDITOR = "nano";
     VISUAL = "nano";

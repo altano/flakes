@@ -9,6 +9,12 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # Decrypts this flake's own secrets at activation, using the identity the
+    # host delivers. Home-manager module, so nothing here needs the NixOS side.
+    agenix = {
+      url = "github:ryantm/agenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     claude-remote-control.url = "path:../../home-manager/claude-remote-control";
     # Publishes a Claude Code release within hours of it shipping. nixpkgs
     # takes days, which is long enough to matter for a CLI that changes weekly.
@@ -24,6 +30,7 @@
       nixpkgs,
       home-manager,
       claude-remote-control,
+      agenix,
       claude-code-nix,
       ...
     }:
@@ -36,6 +43,7 @@
         {
           imports = [
             claude-remote-control.homeModules.default
+            agenix.homeManagerModules.default
             ./home.nix
           ];
           programs.claude-code.package = claude-code-nix.packages.${pkgs.stdenv.hostPlatform.system}.default;
