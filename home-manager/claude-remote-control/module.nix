@@ -347,9 +347,20 @@ in
       Service = {
         Type = "oneshot";
         ExecStart = pkgs.writeShellScript "claude-rc-login-check" ''
-          if [ -e "$XDG_RUNTIME_DIR/claude-rc/logged-in" ]; then
+          state="$XDG_RUNTIME_DIR/claude-rc"
+
+          # Say nothing until the scanner has finished a run, which is what
+          # creates this directory and writes the marker in it. The timer can
+          # otherwise fire first and report a logged-out CLI that nobody has
+          # checked yet, and claude-rc-scan already reports its own failures.
+          if [ ! -d "$state" ]; then
             exit 0
           fi
+
+          if [ -e "$state/logged-in" ]; then
+            exit 0
+          fi
+
           echo "the claude CLI is not logged in; run 'claude auth login'" >&2
           exit 1
         '';
