@@ -4,7 +4,12 @@
 # works wherever it is activated.
 #
 # This repository is public. No cleartext keys, tokens or passwords.
-{ config, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 {
   home.stateVersion = "25.11";
 
@@ -23,6 +28,13 @@
       delta.navigate = true;
       interactive.diffFilter = "delta --color-only";
     };
+  };
+
+  # Loads a directory's .envrc on cd. nix-direnv caches the devShell so
+  # re-entering a directory does not re-evaluate its flake.
+  programs.direnv = {
+    enable = true;
+    nix-direnv.enable = true;
   };
 
   home.file.".config/htop/htoprc".source = ./dotfiles/htoprc;
@@ -84,5 +96,12 @@
     # Ghostty sends TERM=xterm-ghostty, which the machine being logged into has
     # to know or less, htop and vim fail with an unknown terminal.
     pkgs.ghostty.terminfo
+  ]
+  ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+    # trash-put, which the safe-delete skill calls on Linux. Not on macOS,
+    # which has its own /usr/bin/trash: trash-cli also installs a `trash`
+    # alias, and that one rejects the -s flag the skill relies on to make a
+    # failed move exit non-zero.
+    pkgs.trash-cli
   ];
 }
