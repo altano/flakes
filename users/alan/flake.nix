@@ -35,6 +35,26 @@
       ...
     }:
     {
+      # Editing secrets needs age with the 1Password plugin, plus agenix
+      # itself. `agenix -e secrets/<name>.age` re-encrypts to the recipients in
+      # secrets/secrets.nix.
+      devShells =
+        nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ]
+          (
+            system:
+            let
+              pkgs = nixpkgs.legacyPackages.${system};
+            in
+            {
+              default = pkgs.mkShell {
+                packages = [
+                  agenix.packages.${system}.default
+                  (pkgs.age.override { plugins = [ pkgs.age-plugin-1p ]; })
+                ];
+              };
+            }
+          );
+
       # Import this to activate the configuration alongside something else,
       # e.g. `home-manager.users.alan = inputs.alan.homeModules.alan;`. It
       # carries every module it depends on, so a consumer imports this alone.
