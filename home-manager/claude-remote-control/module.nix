@@ -57,21 +57,28 @@ let
     '';
   };
 
-  # `claude remote-control` exits immediately in a directory whose workspace
-  # trust has not been accepted, and trust can only be accepted from a
-  # terminal, so nothing here would ever start in a project nobody had already
-  # opened by hand.
+  # Two answers in `~/.claude.json` stop a server before it does any work, and
+  # the CLI will only take either from a terminal. Both are written here, in
+  # one read-modify-write because the CLI owns the file.
   #
-  # Trust is inherited: the CLI checks the current directory's entry and then
-  # walks up to /, so one entry per project root covers every project beneath
-  # it, including ones created later. That is why this writes the roots rather
-  # than each project directory, which would mean rewriting the file every
-  # time one appeared.
+  # `remoteDialogSeen` gates a one-time "Enable Remote Control? (y/n)" that the
+  # CLI reads from stdin. A unit's stdin is /dev/null, so the read never
+  # returns and the instance hangs with no connection open: the unit sits in
+  # `active running`, the machine never appears in the app, and the prompt
+  # reaches the journal only when the process dies. Turning this service on is
+  # the answer to that question, so it is written whenever the service is on.
   #
-  # A repository cloned into one of those roots therefore has its hooks,
-  # settings and MCP servers trusted without anyone being asked.
-  truster = pkgs.writeShellApplication {
-    name = "claude-rc-trust";
+  # `hasTrustDialogAccepted` gates workspace trust, and a server in an
+  # untrusted directory exits at once. Trust is inherited: the CLI checks the
+  # current directory's entry and then walks up to /, so one entry per project
+  # root covers every project beneath it, including ones created later. That is
+  # why this writes the roots rather than each project directory, which would
+  # mean rewriting the file every time one appeared. A repository cloned into
+  # one of those roots therefore has its hooks, settings and MCP servers
+  # trusted without anyone being asked, which is why `acceptWorkspaceTrust`
+  # guards this half and nothing guards the other.
+  consenter = pkgs.writeShellApplication {
+    name = "claude-rc-consent";
     bashOptions = [
       "pipefail"
       "nounset"
@@ -82,32 +89,37 @@ let
     ];
     text = ''
       cfg=$HOME/.claude.json
-      roots=${lib.escapeShellArg (builtins.toJSON cfg.projectDirs)}
+      roots=${lib.escapeShellArg (builtins.toJSON (lib.optionals cfg.acceptWorkspaceTrust cfg.projectDirs))}
 
       # An absent file means the CLI has never run, which also means there is
       # no login and nothing would start. Creating one here would race the
       # CLI's own first-run initialisation.
       [ -s "$cfg" ] || exit 0
       jq -e . "$cfg" >/dev/null 2>&1 ||
-        { echo "$cfg is not valid JSON, leaving workspace trust alone"; exit 0; }
+        { echo "$cfg is not valid JSON, leaving it alone"; exit 0; }
 
-      # Write only when a root is missing, which happens on the first scan
+      # Write only when something is missing, which happens on the first scan
       # after a root appears and never again. The CLI owns this file and
       # rewrites it often, so a read-modify-write here can discard whatever it
       # wrote in the same moment. Writing rarely makes that unlikely.
+      #
+      # `all` over no roots is true, so an empty list leaves the consent flag
+      # as the only condition.
       jq -e --argjson roots "$roots" \
-        '. as $c | all($roots[]; $c.projects[.].hasTrustDialogAccepted == true)' \
+        '. as $c | $c.remoteDialogSeen == true
+           and all($roots[]; $c.projects[.].hasTrustDialogAccepted == true)' \
         "$cfg" >/dev/null && exit 0
 
       tmp=$(mktemp "$cfg.claude-rc.XXXXXX")
       if jq --argjson roots "$roots" \
-           'reduce $roots[] as $r (.; .projects[$r].hasTrustDialogAccepted = true)' \
+           '.remoteDialogSeen = true
+            | reduce $roots[] as $r (.; .projects[$r].hasTrustDialogAccepted = true)' \
            "$cfg" > "$tmp"; then
         chmod --reference="$cfg" "$tmp"
         mv "$tmp" "$cfg"
       else
         rm -f "$tmp"
-        echo "could not write workspace trust to $cfg"
+        echo "could not write Claude Code consent to $cfg"
         exit 1
       fi
     '';
@@ -148,11 +160,9 @@ let
         rm -f "$state/logged-in"
       fi
 
-      ${lib.optionalString cfg.acceptWorkspaceTrust ''
-        # Runs before any instance is started, because a server in an
-        # untrusted directory exits immediately.
-        ${lib.getExe truster} || echo "workspace trust was not written" >&2
-      ''}
+      # Runs before any instance is started: an unanswered consent prompt hangs
+      # a server forever, and an untrusted directory exits one immediately.
+      ${lib.getExe consenter} || echo "Claude Code consent was not written" >&2
 
       # Every immediate subdirectory of every project root gets a server.
       # Dotted entries are skipped because the glob does not match them.
