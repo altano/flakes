@@ -49,7 +49,8 @@
               default = pkgs.mkShell {
                 packages = [
                   agenix.packages.${system}.default
-                  (pkgs.age.override { plugins = [ pkgs.age-plugin-1p ]; })
+                  pkgs.age
+                  pkgs.age-plugin-1p
                 ];
               };
             }
