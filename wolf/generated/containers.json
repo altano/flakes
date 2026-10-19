@@ -1,75 +1,75 @@
 {
   "es-de": {
     "edge": {
-      "digest": "sha256:673fdc9e5f712aa2e30d13f19994d6d3162c63eeec5ed672e093c7bd4e9b83a9",
+      "digest": "sha256:b718b0a0782a98c6f4a761bc43b2ac984d732f3e2f647ee4614c4986db6b194d",
       "image": "ghcr.io/games-on-whales/es-de",
       "tag": "edge"
     }
   },
   "firefox": {
     "edge": {
-      "digest": "sha256:8345d2f11bec1e42b6fc2d31cd0cd0a65c94fef62c7dec9fa16767a9c136233c",
+      "digest": "sha256:495c17c919689a6b4cb8a16411944b02410e96420b7df29f82db841312778f08",
       "image": "ghcr.io/games-on-whales/firefox",
       "tag": "edge"
     }
   },
   "kodi": {
     "edge": {
-      "digest": "sha256:b11d9b4ae0b126217d411eb087c7961d96dfb0acb7b14c6308a56389762b8937",
+      "digest": "sha256:b19404bbd95212e986bc532e5ecf6252858b3936892659baf1d156ce0dcf5d04",
       "image": "ghcr.io/games-on-whales/kodi",
       "tag": "edge"
     }
   },
   "lutris": {
     "edge": {
-      "digest": "sha256:394acf8649433a2cd3f8d15b1964dabc381a6797b02d181039f7d4e24003281f",
+      "digest": "sha256:3f69b50fa011de6638d6d5a28bbea8b9c6e8f7df7f83ccdb41b1785cdfe4557d",
       "image": "ghcr.io/games-on-whales/lutris",
       "tag": "edge"
     }
   },
   "pegasus": {
     "edge": {
-      "digest": "sha256:b2d3a26555a10c18ba24b01d50e1195d5429c67f9170ae8cadbf77659f7527d7",
+      "digest": "sha256:c53fa2ba1c5b6e435652b9dfcd58d50c459baa0e4f461c8e1b8093e733580258",
       "image": "ghcr.io/games-on-whales/pegasus",
       "tag": "edge"
     }
   },
   "prismlauncher": {
     "edge": {
-      "digest": "sha256:db6715e88bcc93c06fdd14a16074282bcd36c22db9cbef8e80c758d6bc91dcc3",
+      "digest": "sha256:fc36fd303bf788e38e130bc09bd3ca32bb6502cc3611372fecc6d1a5ad24c6b9",
       "image": "ghcr.io/games-on-whales/prismlauncher",
       "tag": "edge"
     }
   },
   "pulseaudio": {
     "master": {
-      "digest": "sha256:5ba6e3a2d77defe6c5a90aca1fe401dbf9e288353757a436118e31a0d5dc9a76",
+      "digest": "sha256:695d882db0122ecc742b8aeeadf2f2d4307e79362d51ee14ce8ef954bc3776e1",
       "image": "ghcr.io/games-on-whales/pulseaudio",
       "tag": "master"
     }
   },
   "retroarch": {
     "edge": {
-      "digest": "sha256:dcc29110a1adae6a284b5c9b553a68c93d66eec16caf94a0168bc951ac1b8ca6",
+      "digest": "sha256:59dda50b345ca8abe372dcfb52aa34e56b63447e33dc62c85e8c3d3fdef52806",
       "image": "ghcr.io/games-on-whales/retroarch",
       "tag": "edge"
     }
   },
   "steam": {
     "edge": {
-      "digest": "sha256:d12f8295e45a192c4b5010018d92b006904e802df32605f158ebbe321965f1ce",
+      "digest": "sha256:2b9a9369b6f0f8b710ea80a9dd2ed9f6421aa98295a8076010a799e58485d660",
       "image": "ghcr.io/games-on-whales/steam",
       "tag": "edge"
     }
   },
   "wolf": {
     "alpha": {
-      "digest": "sha256:c833c0af8bfc08f64150ef070d6d01ba3d198610f13606d06def89b97637c003",
+      "digest": "sha256:4fc827f1d29dd53965dbf529fb60f254a1475ba83ce817663e70da73e5c6096a",
       "image": "ghcr.io/games-on-whales/wolf",
       "tag": "alpha"
     },
     "buildcache": {
-      "digest": "sha256:2c0462e84de65097f12ffb7dd369f68b4cc4510c4bf613413be44d88e5bdf24f",
+      "digest": "sha256:9019d32f92dfed78f5ec283306207860c88b119db155d97617587add62cf68df",
       "image": "ghcr.io/games-on-whales/wolf",
       "tag": "buildcache"
     },
@@ -95,7 +95,7 @@
   },
   "xfce": {
     "edge": {
-      "digest": "sha256:a0955349089f41000dad72d86bc1372871948be37abfdbe9df3558a029bae724",
+      "digest": "sha256:7159e97e64545ad9f313d993429b70b043b68b59dc581faa77b601b7ab77a73c",
       "image": "ghcr.io/games-on-whales/xfce",
       "tag": "edge"
     }
